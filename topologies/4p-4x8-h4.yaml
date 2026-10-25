@@ -1,0 +1,10 @@
+# 4 planes x (4 spines, 8 leaves), 4 hosts per leaf: 32 hosts, 48 switches.
+# Leaf uplinks equal host downlinks (1:1), so ECMP hash collisions on the
+# spine-facing links cost throughput, unlike 4p-4x8's 2:1 headroom.
+name: 4p-4x8-h4
+planes: 4
+spines: 4
+leaves: 8
+hosts_per_leaf: 4
+link:
+  mtu: 4200

@@ -1,0 +1,12 @@
+# 30% loss on every host-facing port of plane 1 from 5s to 10s.
+name: plane-loss
+topology: topologies/2p-2x4.yaml
+duration: 15s
+traffic:
+  - pairs: [{src: h00, dst: h07}]
+    op: write
+    msg_size: 1MiB
+    paths: 8
+faults:
+  - {at: 5s, action: netem, target: {plane: 1}, spec: "loss 30%"}
+  - {at: 10s, action: clear, target: {plane: 1}}

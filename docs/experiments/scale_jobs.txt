@@ -1,0 +1,12 @@
+topologies/4p-4x8-h4.yaml|{"shift":16}|h4-shift-m1|metaroce|{}
+topologies/4p-4x8-h4.yaml|{"shift":16}|h4-shift-m2|metaroce|{"gamma":2}
+topologies/4p-4x8-h4.yaml|{"shift":16}|h4-shift-mrc|mrc|{}
+topologies/4p-4x8-h4.yaml|{"permutation":1}|h4-perm-m1|metaroce|{}
+topologies/4p-4x8-h4.yaml|{"permutation":1}|h4-perm-m2|metaroce|{"gamma":2}
+topologies/4p-4x8-h4.yaml|{"permutation":1}|h4-perm-mrc|mrc|{}
+topologies/4p-4x8.yaml|{"shift":8}|h2-shift-m1|metaroce|{}
+topologies/4p-4x8.yaml|{"shift":8}|h2-shift-m2|metaroce|{"gamma":2}
+topologies/4p-4x8.yaml|{"shift":8}|h2-shift-mrc|mrc|{}
+topologies/4p-4x8.yaml|{"permutation":1}|h2-perm-m1|metaroce|{}
+topologies/4p-4x8.yaml|{"permutation":1}|h2-perm-m2|metaroce|{"gamma":2}
+topologies/4p-4x8.yaml|{"permutation":1}|h2-perm-mrc|mrc|{}

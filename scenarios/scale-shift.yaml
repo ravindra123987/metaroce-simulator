@@ -1,0 +1,11 @@
+# Every host writes to the host half the fabric away, so all traffic
+# crosses the spines. On the 1:1 4p-4x8-h4 fabric the spine links have no
+# headroom: wherever ECMP hashes two flows onto one link, both slow down.
+name: scale-shift
+topology: topologies/4p-4x8-h4.yaml
+duration: 6s
+traffic:
+  - pairs: {shift: 16}
+    op: write
+    msg_size: 1MiB
+    paths: 8

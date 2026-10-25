@@ -1,0 +1,8 @@
+name: baseline
+topology: topologies/2p-2x4.yaml
+duration: 15s
+traffic:
+  - pairs: [{src: h00, dst: h07}, {src: h02, dst: h05}]
+    op: write
+    msg_size: 1MiB
+    paths: 4

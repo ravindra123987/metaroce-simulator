@@ -1,0 +1,43 @@
+diff --git a/libsoftmetaroce/TxFlow.cpp b/libsoftmetaroce/TxFlow.cpp
+index 125144d..65a7677 100644
+--- a/libsoftmetaroce/TxFlow.cpp
++++ b/libsoftmetaroce/TxFlow.cpp
+@@ -185,6 +185,9 @@ void TxFlow::onRetransmissionTimeout() {
+   if (qp_.isTearingDown()) {
+     return;
+   }
++  LOG(INFO) << "RTODBG fire qp " << qp_.getLocalQpNum() << " flow " << flowId_
++            << " una " << txState_.sndUna << " nxt " << txState_.sndNxt
++            << " consec " << consecutiveRtosWithoutAck_;
+   if (!qpRetxTimer_) {
+     LOG(ERROR)
+         << "RTO handler invoked after timer destruction; this is an error, timers should be destroyed before QP teardown";
+@@ -209,8 +212,8 @@ void TxFlow::onRetransmissionTimeout() {
+       // dropped signal for an unsent WQE with no frame outstanding behind it
+       // leaves no other path to retry it.
+       setRetransmissionTimer();
+-      LOG_FIRST_N(INFO, 20)
+-          << "RetxTimer expired (rto=" << rtoUs << "us) for qp "
++      LOG(INFO)
++          << "RTODBG skip RetxTimer expired (rto=" << rtoUs << "us) for qp "
+           << qp_.getLocalQpNum() << " flow " << flowId_
+           << " but can still send (window="
+           << qp_.congestionController_->getAvailableWindowSize(flowId_)
+@@ -222,6 +225,7 @@ void TxFlow::onRetransmissionTimeout() {
+ 
+   // The first RTO retransmits; only a later one may fail the work.
+   if (consecutiveRtosWithoutAck_ > 0 && qp_.hasWatchdogExpired()) {
++    LOG(INFO) << "RTODBG watchdog flow " << flowId_;
+     qp_.processWatchdogExpiryAsync();
+     return;
+   }
+@@ -252,6 +256,9 @@ void TxFlow::onRetransmissionTimeout() {
+   auto lockedSndCur = txState_.sndCur.rlock();
+   if (txState_.sndUna != txState_.sndNxt) {
+     setRetransmissionTimer();
++    LOG(INFO) << "RTODBG rearm flow " << flowId_ << " rto_us " << computeRtoIntervalUs();
++  } else {
++    LOG(INFO) << "RTODBG no-rearm flow " << flowId_;
+   }
+ }
+ 

@@ -1,0 +1,14 @@
+# A spine-to-destination-leaf link fails for 4s. Static routes keep sending
+# into it, so flows hashed onto that spine see a blackhole until they
+# re-steer (new entropy after RTO, spec §4.8).
+name: link-flap
+topology: topologies/2p-2x4.yaml
+duration: 15s
+traffic:
+  - pairs: [{src: h00, dst: h07}]
+    op: write
+    msg_size: 1MiB
+    paths: 8
+faults:
+  - {at: 5s, action: link-down, target: {link: "p0-spine0:eth4"}}
+  - {at: 9s, action: link-up, target: {link: "p0-spine0:eth4"}}

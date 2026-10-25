@@ -1,0 +1,15 @@
+# Same as incast.yaml with drop-tail queues and no ECN marking.
+# and RED ECN marking. Each sender alone runs ~1.9 Gbit/s in software, so
+# the downlinks to h07 (one per plane) are oversubscribed ~4x.
+name: incast-noecn
+topology: topologies/2p-2x4.yaml
+duration: 15s
+traffic:
+  - pairs: {incast: 7, senders: 4}
+    op: write
+    msg_size: 1MiB
+transport:
+  nic_rate_gbps: 1          # receiver's RCN target rate uses the shaped rate
+fabric:
+  shape: {ports: downlinks, rate: 1gbit}
+  limit_kb: 400            # drop-tail, no ECN

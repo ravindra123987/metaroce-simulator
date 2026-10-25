@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "metaroce_sim"
+version = "0.0.1"
+description = "MetaRoCE emulator (containerlab + libsoftmetaroce) and discrete-event simulator"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = ["PyYAML>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff>=0.5"]
+
+[project.scripts]
+mrsim = "metaroce_sim.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["metaroce_sim*"]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["docs"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not lab'"
+markers = ["lab: needs a deployed containerlab lab"]
