@@ -59,13 +59,16 @@ The emulator needs a Linux host with Docker and
 1. Build the switch image and the host image. The host image contains
    `libsoftmetaroce` and `rdma_gen`, built with Meta's getdeps. The first
    build compiles folly and fbthrift and takes a few hours. A failed build
-   resumes where it stopped.
+   resumes where it stopped. `METAROCE_SHA` picks the metaroce version; the
+   one below is the version this repo was last calibrated against. Use
+   `JOBS=1` if the build runs out of memory; fbthrift needs several GB per
+   compile job.
 
    ```sh
    docker build -t metaroce-switch:latest images/switch
    mkdir -p ~/metaroce-build && cp images/host/build-lsmr.sh ~/metaroce-build/
    docker run --rm -v ~/metaroce-build:/w \
-     -e METAROCE_SHA=98686f59a2fbf16844cea9beb8e2101b36ecee02 -e JOBS=2 \
+     -e METAROCE_SHA=851581693b7a34bca2e0d71aaeba45600474ee7f -e JOBS=2 \
      ubuntu:24.04 bash /w/build-lsmr.sh
    docker build -f images/host/Dockerfile -t metaroce-host:latest ~/metaroce-build
    ```
@@ -126,7 +129,8 @@ faults:
   - {at: 5s, action: netem, target: {plane: 1}, spec: "loss 30%"}
   - {at: 10s, action: clear, target: {plane: 1}}
 sim:                                # simulator-only settings
-  profile: lsmr                     # timers and rate measured from libsoftmetaroce
+  profile: lsmr                     # libsoftmetaroce's timers, rate and recovery
+                                    #    (lsmr-98686f59 for the older behavior)
   completion: inorder               # free a WQE slot only after earlier messages complete
   seed: 1
 ```
@@ -138,11 +142,12 @@ a link (`{link: "p0-spine0:eth4"}`), a node, or a whole plane.
 
 - [docs/findings/lsmr.md](docs/findings/lsmr.md): behavior of
   `libsoftmetaroce` observed in the emulator, including two issues
-  reported upstream
+  reported upstream and since fixed there
   ([#2](https://github.com/facebookincubator/metaroce/issues/2),
   [#3](https://github.com/facebookincubator/metaroce/issues/3)).
 - [docs/calibration.md](docs/calibration.md): how the simulator's `lsmr`
-  profile was matched to emulator runs.
+  profiles were matched to emulator runs, for metaroce `98686f59` and
+  `8515816`.
 - [docs/experiments/alt-plane-retry.md](docs/experiments/alt-plane-retry.md):
   how much of a plane-loss stall is removed by retrying on another plane.
 - [docs/experiments/scale-4p.md](docs/experiments/scale-4p.md): the cost of

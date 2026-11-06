@@ -156,6 +156,18 @@ def test_sack_vector_wraps_fsn():
     assert AckHeader(cum_fsn=0xFFFE, max_fsn=1, status=1, fsn_vec=vec).sacked_fsns() == [1]
 
 
+def test_legacy_compare_and_swap_opcode_decodes():
+    a = Packet(base=base(Op.CMP_SWAP), data=meth(posn=0), atomic=AtomicEth(0x10, 1, 2, 3))
+    body = bytearray(encode(a, with_mcrc=False))
+    assert body[0] == 0xd5                  # current opcode
+    body[0] = 0xd3                          # value used before metaroce 93d1f83
+    raw = bytes(body) + mcrc(bytes(body)).to_bytes(4, "little")
+    got = decode(raw)
+    assert got.base.op == Op.CMP_SWAP and got.mcrc_valid
+    assert got.atomic == AtomicEth(0x10, 1, 2, 3)
+    assert encode(got) == raw               # the original byte is kept
+
+
 def test_shortened_sack_vector_round_trips():
     ack = AckHeader(cum_fsn=5, max_fsn=9, status=1, fsn_vec=(0b1000).to_bytes(4, "big"))
     raw = encode(Packet(base=base(Op.SEL_ACK), ack=ack))

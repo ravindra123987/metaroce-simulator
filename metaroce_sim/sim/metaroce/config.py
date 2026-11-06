@@ -48,8 +48,9 @@ class Config:
     # Sender-side rate limit per QP in Gbit/s (0 = none). Models a CPU-bound
     # software transport such as libsoftmetaroce (~2 Gbit/s per QP in the lab).
     max_gbps: float = 0.0
-    # A failed-over flow tries its home port again after this long (LSMR
-    # restores the original pair once it is usable again).
+    # A failed-over flow tries its home port again after this long; 0 never
+    # moves it back (LSMR since 174b8a7: only a remote port-status change
+    # restores the configured pair).
     port_restore_ns: int = 20_000_000
 
     @property

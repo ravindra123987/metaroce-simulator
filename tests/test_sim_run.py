@@ -72,7 +72,10 @@ def test_lsmr_profile_sets_measured_parameters():
     raw["sim"] = {"profile": "lsmr"}
     cfg = simrun.build_config(scenario.parse(raw, T.num_hosts))
     assert (cfg.min_rto_ns, cfg.max_rto_ns, cfg.max_gbps) == (10_000_000, 200_000_000, 2.0)
-    assert cfg.rtos_before_port_failover == 0
+    assert (cfg.rtos_before_port_failover, cfg.port_restore_ns) == (3, 0)
+    raw["sim"] = {"profile": "lsmr-98686f59"}
+    old = simrun.build_config(scenario.parse(raw, T.num_hosts))
+    assert old.rtos_before_port_failover == 0
 
 
 def test_inorder_completion_holds_slots_behind_an_open_message():

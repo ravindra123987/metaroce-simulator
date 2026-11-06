@@ -260,7 +260,8 @@ class SenderQp:
             if others:
                 f.plane = self.rng.choice(others)  # random among usable ports (§7.5.4)
                 f.rtos_without_ack = 0
-                self.sim.after(self.cfg.port_restore_ns, self._restore, f)
+                if self.cfg.port_restore_ns:
+                    self.sim.after(self.cfg.port_restore_ns, self._restore, f)
         self.cc.on_ack(f, acked=0, ce=0, lost=len(resend), window_limited=False)
         for fsn in resend[:max(1, f.fwnd)]:
             fr = f.inflight.get(fsn)

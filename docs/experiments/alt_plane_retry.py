@@ -43,7 +43,7 @@ def run(label, cfg, seeds, scale=1.0, name=SCEN):
     out = []
     for seed in seeds:
         raw = yaml.safe_load(Path(f"scenarios/{name}.yaml").read_text())
-        raw["sim"] = {"profile": "lsmr", "time_scale": scale, "seed": seed, "config": cfg, **simx}
+        raw["sim"] = {"profile": "lsmr-98686f59", "time_scale": scale, "seed": seed, "config": cfg, **simx}
         d = simrun.run(T, scenario.parse(raw, T.num_hosts), OUT, run_id=f"{name}-{label}-{seed}")
         r = json.loads((d / "report.json").read_text())
         g = r["goodput_gbps"]["total"]

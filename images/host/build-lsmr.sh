@@ -7,11 +7,12 @@
 #
 #   /w/src      metaroce checkout at $METAROCE_SHA
 #   /w/scratch  getdeps scratch path
-#   /w/out      final install tree: bin/ + lib/ with rpaths fixed up
+#   /w/out      final install tree ($OUT): bin/ + lib/, rpaths set for /opt/metaroce
 set -euo pipefail
 
 : "${METAROCE_SHA:?set METAROCE_SHA}"
 JOBS="${JOBS:-2}"
+OUT="${OUT:-/w/out}"
 
 export DEBIAN_FRONTEND=noninteractive
 # getdeps runs `pip install pex`; Ubuntu 24.04 marks the system Python as
@@ -43,10 +44,16 @@ seed xz-xz-5.2.5.tar.gz https://downloads.sourceforge.net/project/lzmautils/xz-5
 
 GETDEPS="python3 build/fbcode_builder/getdeps.py --allow-system-packages --scratch-path /w/scratch"
 
-$GETDEPS install-system-deps --recursive rdma_gen
+# The getdeps project was `rdma_gen` until late October 2026 and is
+# `metaroce` since; build whichever this checkout defines.
+PROJECT=rdma_gen
+[ -f build/fbcode_builder/manifests/metaroce ] && PROJECT=metaroce
+
+$GETDEPS install-system-deps --recursive "$PROJECT"
 $GETDEPS install-system-deps --recursive patchelf
-$GETDEPS build --no-tests --num-jobs "$JOBS" --src-dir . rdma_gen
-$GETDEPS fixup-dyn-deps --src-dir . rdma_gen /w/out
+$GETDEPS build --no-tests --num-jobs "$JOBS" --src-dir . "$PROJECT"
+# Point rpaths and the interpreter at where the host image installs the tree.
+$GETDEPS fixup-dyn-deps --src-dir . --final-install-prefix /opt/metaroce "$PROJECT" "$OUT"
 
 echo "BUILD OK: $(git rev-parse HEAD)"
-find /w/out -maxdepth 2 -type f -perm -u+x | head -20
+find "$OUT" -maxdepth 2 -type f -perm -u+x | head -20

@@ -63,6 +63,10 @@ class Op(IntEnum):
     UNRELIABLE_CONTROL = 0b11111
 
 
+# Compare-and-Swap was 0xd3 before metaroce 93d1f83 (2026-11) moved it to
+# 0xd5; decode the old value too so older captures still parse.
+LEGACY_CMP_SWAP = 0b10011
+
 RETH_OPS = {Op.WRITE, Op.WRITE_IMM, Op.WRITE_IMM_P, Op.READ, Op.READ_IMM_P}
 IMM_OPS = {Op.SEND_IMM_P, Op.WRITE_IMM_P, Op.READ_IMM_P}
 ATOMIC_OPS = {Op.FETCH_ADD, Op.CMP_SWAP}
@@ -105,8 +109,11 @@ class BaseHeader:
 
     @property
     def op(self) -> Op | None:
+        low = self.opcode & 0x1F
+        if low == LEGACY_CMP_SWAP:
+            return Op.CMP_SWAP
         try:
-            return Op(self.opcode & 0x1F)
+            return Op(low)
         except ValueError:
             return None
 

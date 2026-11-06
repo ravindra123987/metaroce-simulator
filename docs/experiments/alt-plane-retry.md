@@ -12,7 +12,8 @@ entropy on the *same* plane. The spec also allows moving it to another port
 
 ## First, the simulator had to reproduce the stall
 
-The `lsmr` profile showed no stall on any of 5 seeds. The simulator
+The `lsmr-98686f59` profile (then called `lsmr`) showed no stall on any of
+5 seeds. The simulator
 completed messages in any order: one message stuck behind a lost packet held
 one of the 8 WQE slots, and the other 7 kept the link busy. RDMA completes
 work requests in order, so in LSMR a stuck message holds its slot *and*
@@ -22,9 +23,18 @@ every slot posted after it. The sender runs out of WQEs and stops.
 earlier message is done. With it, the simulator reproduces the stall. It is
 off by default so earlier results stay comparable.
 
+## Update (2026-11-06)
+
+Upstream now does this: since metaroce `174b8a7`, each RTO after the
+entropy change moves the flow to the next configured port pair. In the
+emulator at `8515816`, plane-loss shows no QP stall and 1.96 Gbit/s during
+the fault, and the simulator's new `lsmr` profile matches it. The moved flow
+does not return to its original plane afterwards
+([findings #7](../findings/lsmr.md)).
+
 ## Result
 
-`lsmr` profile, `completion: inorder`, plane-loss, time_scale 1.0.
+`lsmr-98686f59` profile, `completion: inorder`, plane-loss, time_scale 1.0.
 
 | Variant | Seeds | Longest whole-QP stall | Goodput during fault (cap 2.0 Gbit/s) |
 |---|---|---|---|
@@ -50,6 +60,6 @@ re-sending over the lossy plane, and leaving the plane removes it.
 
 - In the simulator a flow that fails over comes back after 20 ms
   (`port_restore_ns`) and may fail over again while the plane is still bad.
-  LSMR has no port failover to compare against.
+  At the time, LSMR had no timeout-driven port change to compare against.
 - Loss is 30% on every host-facing port of one plane. A loss pattern that
   hits both planes would not be helped by this.

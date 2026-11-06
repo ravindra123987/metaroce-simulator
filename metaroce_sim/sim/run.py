@@ -49,12 +49,16 @@ def _entropy_counter():
     return lambda: next(it)
 
 
+_LSMR_BASE = {"min_rto_ns": 10_000_000, "max_rto_ns": 200_000_000,
+              "rtos_before_repath": 2, "max_gbps": 2.0}
 PROFILES = {
     # libsoftmetaroce as measured in the emulator (docs/findings/lsmr.md):
-    # CPU-bound ~2 Gbit/s per QP, LSMR's timer defaults, re-steer after two
-    # RTOs, and no timeout-driven port failover (none was ever logged).
-    "lsmr": {"min_rto_ns": 10_000_000, "max_rto_ns": 200_000_000,
-             "rtos_before_repath": 2, "rtos_before_port_failover": 0, "max_gbps": 2.0},
+    # CPU-bound ~2 Gbit/s per QP, LSMR's timer defaults, and re-steer after
+    # two RTOs. Since metaroce 174b8a7 each further RTO moves the flow to the
+    # next configured port pair, and it stays there.
+    "lsmr": {**_LSMR_BASE, "rtos_before_port_failover": 3, "port_restore_ns": 0},
+    # metaroce 98686f59 and earlier: re-steer within the plane only.
+    "lsmr-98686f59": {**_LSMR_BASE, "rtos_before_port_failover": 0},
 }
 
 

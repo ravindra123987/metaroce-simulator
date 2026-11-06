@@ -1,4 +1,4 @@
-# Emulator vs simulator calibration (2026-10-16)
+# Emulator vs simulator calibration
 
 Goal: make the simulator's MetaRoCE model behave like libsoftmetaroce in the
 emulator, so simulator results (and MetaRoCE-vs-MRC comparisons) can be
@@ -7,9 +7,10 @@ trusted. The emulator runs used here were all on the repaired fabric (see
 `--libsoftmetaroce_slow_receiver=false` (lsmr.md #5) and the link-up fix
 (lsmr.md #6).
 
-## The `lsmr` profile
+## metaroce `98686f59` (2026-10-16): the `lsmr-98686f59` profile
 
-`sim: {profile: lsmr, time_scale: 1.0}` sets what the emulator measured:
+`sim: {profile: lsmr-98686f59, time_scale: 1.0}` (called `lsmr` until
+2026-11-06) sets what the emulator measured:
 
 | Setting | Value | Evidence |
 |---|---|---|
@@ -71,6 +72,37 @@ Fast start now does that, and those per-port flows stay active afterwards.
   (lsmr.md #6); with the fix, LSMR link-flap runs show no outage.
 - **Incast:** throughput agrees; CE marking is within 1.6x.
 
-Reproduce: `sim:` block `{profile: lsmr, time_scale: 1.0}` on the
+Reproduce: `sim:` block `{profile: lsmr-98686f59, time_scale: 1.0}` on the
 bundled scenarios (about 25 s of wall time each), then
 `metaroce_sim.analysis.compare.write(out, name, {"emu": <emu run>, "sim": <sim run>})`.
+
+## metaroce `8515816` (2026-11-06): the `lsmr` profile
+
+Upstream changed RTO recovery (`174b8a7`): after the entropy change, each
+further RTO moves the flow to the next configured port pair, and it does
+not move back (lsmr.md #7). The `lsmr` profile now models that:
+`rtos_before_port_failover: 3` (entropy at the 2nd RTO, pair at the 3rd)
+and `port_restore_ns: 0` (never restore). Timers and the 2 Gbit/s rate are
+unchanged. One emulator run per scenario; simulator at time_scale 1.0 with
+`completion: inorder`, 3 seeds:
+
+| Scenario | Metric | Emulator | Simulator `lsmr` | Simulator `lsmr-98686f59` |
+|---|---|---|---|---|
+| plane-loss | goodput, whole run | 1.89 Gbit/s | 2.00 | 1.55–1.62 |
+| | goodput during the fault | 1.96 | 2.00 | 0.81–0.94 |
+| | plane 1 in the last 3 s | 0.00 | 0.00 | 1.00 |
+| | retransmissions (by timeout) | 909 (841) | 4 (3–4) | 322–363 |
+| link-flap | goodput during the fault | 1.97 | 2.00 | |
+| | recovery after the clear | 0.2 s | 0 s | |
+| | retransmissions | 17 | 3 | |
+| incast (4 -> 1, ECN) | goodput | 1.72 | | |
+| | CE-marked packets | 190k | | |
+
+The new profile matches the emulator on where traffic goes: plane 1 is
+abandoned during the fault and stays empty afterwards, with no QP stall.
+It does not match on timeout retransmissions. In the emulator, 837 of the
+841 come from the flow that moved, and keep firing on plane 0 until the
+fault clears; the model's moved flow has no further timeouts. That gap is
+open. No process crashed in any of the four runs (at `98686f59`, every
+incast process crashed at teardown).
+

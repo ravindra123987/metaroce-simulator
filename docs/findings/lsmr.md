@@ -3,7 +3,8 @@
 Observed with `rdma_gen` + libsoftmetaroce at metaroce `98686f59`, on the
 2p-2x4 emulated fabric (h00 -> h07, both planes, one address per plane).
 Findings #2 and #5 were re-checked on metaroce `a04f884` (2026-10-21) in a
-minimal network-namespace setup and still hold there.
+minimal network-namespace setup and still held there. Both are fixed
+upstream as of `8515816` (2026-11-06); see #7 for how recovery behaves now.
 
 ## 1. SIGSEGV in `Qp::processWatchdogExpiry()` when a QP stalls
 
@@ -50,6 +51,8 @@ bound to the same local port (spec §4.8 changes the entropy, not the
 port, on the first re-steer).
 
 Reported upstream as [metaroce#3](https://github.com/facebookincubator/metaroce/issues/3).
+**Fixed** in `3a313e1` (RTO repath stays within the flow's port pair); no
+cross-plane source addresses in 2 of 2 runs at `8515816`.
 
 ## 3. Smaller notes
 
@@ -88,6 +91,9 @@ finding #1 at teardown, so throughput has to come from the captures.
 
 Reported upstream as [metaroce#2](https://github.com/facebookincubator/metaroce/issues/2):
 `--libsoftmetaroce_max_rto_us` has no effect while `slow_receiver` is true.
+**Fixed** in `5701944` and `3f1bc36`: at `8515816`, with
+`max_rto_us=20000` and the slow-receiver default, the longest gap during a
+blackout is 26–31 ms (3 of 3 runs; it was 1.3–1.5 s).
 
 **Symptom.** Under 30% loss on one plane, the whole QP sometimes sent
 nothing for 1-2 s: no data on either flow and no ACKs, then a burst of
@@ -144,3 +150,21 @@ link-flap runs show no outage (156 -> 33-40 retransmissions).
 
 This fix did not remove the plane-loss stall (a netem fault never takes a
 link down), which pointed the search at LSMR itself and led to #5.
+
+## 7. Since `174b8a7`: RTO recovery moves the port pair, and does not move back (2026-11-06)
+
+At `8515816`, after the entropy change (`rtos_before_repath`), each further
+unanswered RTO moves the flow to the next configured port pair: the spec's
+"change output port on subsequent RTO" (§4.8). The whole-QP stall of #5 is
+gone in plane-loss: goodput during the fault is 1.96 Gbit/s.
+
+The commit also defers automatic restoration of the original pair while
+timeouts are unanswered, and nothing restores it afterwards unless the
+remote's active port set changes. In plane-loss, the flow that left plane 1
+never returns: plane 1 carries no data for the rest of the run (emulator,
+and 3 of 3 network-namespace runs, the longest 28 s after the loss
+cleared). Throughput does not suffer here only because LSMR is CPU-bound;
+on a fabric where each plane is a bandwidth share, one loss episode would
+leave a QP on fewer planes for good. Spec §7.5.1 asks for "restoring
+previously diverted traffic" when ports recover.
+
